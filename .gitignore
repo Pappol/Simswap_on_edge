@@ -127,3 +127,20 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+docs/ppt/
+checkpoints/
+*.tar
+*.patch
+*.zip
+*.avi
+*.pdf
+*.pptx
+
+*.pth
+*.onnx
+wandb/
+crop_224/
+arcface_model/
+demo_file/
+docs/
