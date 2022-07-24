@@ -57,13 +57,23 @@ if __name__ == '__main__':
         latend_id = model.netArc(img_id_downsample)
         latend_id = latend_id.detach().to('cpu')
         latend_id = latend_id/np.linalg.norm(latend_id,axis=1,keepdims=True)
+
+        print (type(latend_id))
         latend_id = latend_id.to('cuda')
 
 
         ############## Forward Pass ######################
         img_fake = model(img_id, img_att, latend_id, latend_id, True)
+        print(img_fake.shape)
+        print("\n")
 
+        print(img_id.shape)
+        print("\n")
+        print(img_att.shape)
+        print("\n")
+        print(latend_id.shape)
 
+        print("\n")
         for i in range(img_id.shape[0]):
             if i == 0:
                 row1 = img_id[i]
