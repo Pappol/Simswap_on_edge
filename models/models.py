@@ -88,7 +88,7 @@ class ResNet(nn.Module):
         self.inplanes = 64
         self.use_se = use_se
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, bias=False)
+        self.conv1 = DWConv(3, 64, kernel_size=3, stride=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.prelu = nn.PReLU()
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -102,7 +102,7 @@ class ResNet(nn.Module):
         self.bn3 = nn.BatchNorm1d(512)
 
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, DWConv):
                 nn.init.xavier_normal_(m.weight)
             elif isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm1d):
                 nn.init.constant_(m.weight, 1)
@@ -115,7 +115,7 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
+                DWConv(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes * block.expansion),
             )

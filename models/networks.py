@@ -5,6 +5,9 @@ from torch.autograd import Variable
 import numpy as np
 from torchvision import transforms
 import torch.nn.functional as F
+from .depthwise import DWConv
+from .depthwise import DWConvTranspose2d
+
 
 ###############################################################################
 # Functions
@@ -224,9 +227,9 @@ class LocalEnhancer(nn.Module):
         for n in range(1, n_local_enhancers+1):
             ### downsample            
             ngf_global = ngf * (2**(n_local_enhancers-n))
-            model_downsample = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf_global, kernel_size=7, padding=0), 
+            model_downsample = [nn.ReflectionPad2d(3), DWConv(input_nc, ngf_global, kernel_size=7, padding=0), 
                                 norm_layer(ngf_global), nn.ReLU(True),
-                                nn.Conv2d(ngf_global, ngf_global * 2, kernel_size=3, stride=2, padding=1), 
+                                DWConv(ngf_global, ngf_global * 2, kernel_size=3, stride=2, padding=1), 
                                 norm_layer(ngf_global * 2), nn.ReLU(True)]
             ### residual blocks
             model_upsample = []
@@ -234,12 +237,12 @@ class LocalEnhancer(nn.Module):
                 model_upsample += [ResnetBlock(ngf_global * 2, padding_type=padding_type, norm_layer=norm_layer)]
 
             ### upsample
-            model_upsample += [nn.ConvTranspose2d(ngf_global * 2, ngf_global, kernel_size=3, stride=2, padding=1, output_padding=1), 
+            model_upsample += [DWConvTranspose2d(ngf_global * 2, ngf_global, kernel_size=3, stride=2, padding=1, output_padding=1), 
                                norm_layer(ngf_global), nn.ReLU(True)]      
 
             ### final convolution
             if n == n_local_enhancers:                
-                model_upsample += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]                       
+                model_upsample += [nn.ReflectionPad2d(3), DWConv(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]                       
             
             setattr(self, 'model'+str(n)+'_1', nn.Sequential(*model_downsample))
             setattr(self, 'model'+str(n)+'_2', nn.Sequential(*model_upsample))                  
@@ -269,11 +272,11 @@ class GlobalGenerator(nn.Module):
         super(GlobalGenerator, self).__init__()        
         activation = nn.ReLU(True)        
 
-        model = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
+        model = [nn.ReflectionPad2d(3), DWConv(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
         ### downsample
         for i in range(n_downsampling):
             mult = 2**i
-            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+            model += [DWConv(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
                       norm_layer(ngf * mult * 2), activation]
 
         ### resnet blocks
@@ -284,9 +287,9 @@ class GlobalGenerator(nn.Module):
         ### upsample         
         for i in range(n_downsampling):
             mult = 2**(n_downsampling - i)
-            model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1, output_padding=1),
+            model += [DWConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1, output_padding=1),
                        norm_layer(int(ngf * mult / 2)), activation]
-        model += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]        
+        model += [nn.ReflectionPad2d(3), DWConv(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]        
         self.model = nn.Sequential(*model)
             
     def forward(self, input):
@@ -310,7 +313,7 @@ class ResnetBlock(nn.Module):
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
 
-        conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p),
+        conv_block += [DWConv(dim, dim, kernel_size=3, padding=p),
                        norm_layer(dim),
                        activation]
         if use_dropout:
@@ -325,7 +328,7 @@ class ResnetBlock(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p),
+        conv_block += [DWConv(dim, dim, kernel_size=3, padding=p),
                        norm_layer(dim)]
 
         return nn.Sequential(*conv_block)
@@ -401,7 +404,7 @@ class ResnetBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv1 += [nn.Conv2d(dim, dim, kernel_size=3, padding = p), InstanceNorm()]
+        conv1 += [DWConv(dim, dim, kernel_size=3, padding = p), InstanceNorm()]
         self.conv1 = nn.Sequential(*conv1)
         self.style1 = ApplyStyle(latent_size, dim)
         self.act1 = activation
@@ -416,7 +419,7 @@ class ResnetBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv2 += [nn.Conv2d(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
+        conv2 += [DWConv(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
         self.conv2 = nn.Sequential(*conv2)
         self.style2 = ApplyStyle(latent_size, dim)
 
@@ -444,7 +447,7 @@ class UpBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv1 += [nn.Conv2d(dim_in, dim_out, kernel_size=3, padding = p), InstanceNorm()]
+        conv1 += [DWConv(dim_in, dim_out, kernel_size=3, padding = p), InstanceNorm()]
         self.conv1 = nn.Sequential(*conv1)
         self.style1 = ApplyStyle(latent_size, dim_out)
         self.act1 = activation
@@ -461,21 +464,21 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()        
         self.output_nc = output_nc        
 
-        model = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0), 
+        model = [nn.ReflectionPad2d(3), DWConv(input_nc, ngf, kernel_size=7, padding=0), 
                  norm_layer(ngf), nn.ReLU(True)]             
         ### downsample
         for i in range(n_downsampling):
             mult = 2**i
-            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+            model += [DWConv(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
                       norm_layer(ngf * mult * 2), nn.ReLU(True)]
 
         ### upsample         
         for i in range(n_downsampling):
             mult = 2**(n_downsampling - i)
-            model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1, output_padding=1),
+            model += [DWConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1, output_padding=1),
                        norm_layer(int(ngf * mult / 2)), nn.ReLU(True)]        
 
-        model += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
+        model += [nn.ReflectionPad2d(3), DWConv(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
         self.model = nn.Sequential(*model) 
 
     def forward(self, input, inst):
@@ -501,11 +504,11 @@ class Generator_Adain(nn.Module):
         super(Generator_Adain, self).__init__()
         activation = nn.ReLU(True)
 
-        Enc = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
+        Enc = [nn.ReflectionPad2d(3), DWConv(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
         ### downsample
         for i in range(n_downsampling):
             mult = 2 ** i
-            Enc += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+            Enc += [DWConv(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
                       norm_layer(ngf * mult * 2), activation]
         self.Encoder = nn.Sequential(*Enc)
 
@@ -528,10 +531,10 @@ class Generator_Adain(nn.Module):
         Dec = []
         for i in range(n_downsampling):
             mult = 2 ** (n_downsampling - i)
-            Dec += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1,
+            Dec += [DWConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1,
                                          output_padding=1),
                       norm_layer(int(ngf * mult / 2)), activation]
-        Dec += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
+        Dec += [nn.ReflectionPad2d(3), DWConv(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
 
         self.Decoder = nn.Sequential(*Dec)
         #self.model = nn.Sequential(*model)
@@ -563,11 +566,11 @@ class Generator_Adain_Mask(nn.Module):
         super(Generator_Adain_Mask, self).__init__()
         activation = nn.ReLU(True)
 
-        Enc = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
+        Enc = [nn.ReflectionPad2d(3), DWConv(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
         ### downsample
         for i in range(n_downsampling):
             mult = 2 ** i
-            Enc += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+            Enc += [DWConv(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
                       norm_layer(ngf * mult * 2), activation]
         self.Encoder = nn.Sequential(*Enc)
 
@@ -582,11 +585,11 @@ class Generator_Adain_Mask(nn.Module):
         Dec = []
         for i in range(n_downsampling):
             mult = 2 ** (n_downsampling - i)
-            Dec += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1,
+            Dec += [DWConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1,
                                          output_padding=1),
                       norm_layer(int(ngf * mult / 2)), activation]
-        Fake_out = [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
-        Mast_out = [nn.ReflectionPad2d(3), nn.Conv2d(ngf, 1, kernel_size=7, padding=0), nn.Sigmoid()]
+        Fake_out = [nn.ReflectionPad2d(3), DWConv(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
+        Mast_out = [nn.ReflectionPad2d(3), DWConv(ngf, 1, kernel_size=7, padding=0), nn.Sigmoid()]
 
         self.Decoder = nn.Sequential(*Dec)
         #self.model = nn.Sequential(*model)
@@ -621,11 +624,11 @@ class Generator_Adain_Upsample(nn.Module):
         super(Generator_Adain_Upsample, self).__init__()
         activation = nn.ReLU(True)
 
-        Enc = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
+        Enc = [nn.ReflectionPad2d(3), DWConv(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
         ### downsample
         for i in range(n_downsampling):
             mult = 2 ** i
-            Enc += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+            Enc += [DWConv(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
                       norm_layer(ngf * mult * 2), activation]
         self.Encoder = nn.Sequential(*Enc)
 
@@ -640,13 +643,13 @@ class Generator_Adain_Upsample(nn.Module):
         Dec = []
         for i in range(n_downsampling):
             mult = 2 ** (n_downsampling - i)
-            '''Dec += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1,
+            '''Dec += [DWConvTranspose2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1,
                                          output_padding=1),
                       norm_layer(int(ngf * mult / 2)), activation]'''
             Dec += [nn.Upsample(scale_factor=2, mode='bilinear'),
-                    nn.Conv2d(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=1, padding=1),
+                    DWConv(ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=1, padding=1),
                     norm_layer(int(ngf * mult / 2)), activation]
-        Dec += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
+        Dec += [nn.ReflectionPad2d(3), DWConv(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
 
         self.Decoder = nn.Sequential(*Dec)
         self.spNorm = SpecificNorm()
@@ -673,11 +676,11 @@ class Generator_Adain_2(nn.Module):
         super(Generator_Adain_2, self).__init__()
         activation = nn.ReLU(True)
 
-        Enc = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
+        Enc = [nn.ReflectionPad2d(3), DWConv(input_nc, ngf, kernel_size=7, padding=0), norm_layer(ngf), activation]
         ### downsample
         for i in range(n_downsampling):
             mult = 2 ** i
-            Enc += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+            Enc += [DWConv(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
                       norm_layer(ngf * mult * 2), activation]
         self.Encoder = nn.Sequential(*Enc)
 
@@ -693,7 +696,7 @@ class Generator_Adain_2(nn.Module):
         for i in range(n_downsampling):
             mult = 2 ** (n_downsampling - i)
             Dec += [UpBlock_Adain(dim_in=ngf * mult, dim_out=int(ngf * mult / 2), latent_size=latent_size, padding_type=padding_type)]
-        layer_out = [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
+        layer_out = [nn.ReflectionPad2d(3), DWConv(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
 
         self.Decoder = nn.Sequential(*Dec)
         #self.model = nn.Sequential(*model)
@@ -768,29 +771,29 @@ class NLayerDiscriminator(nn.Module):
 
         kw = 4
         padw = 1
-        sequence = [[nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw), nn.LeakyReLU(0.2, True)]]
+        sequence = [[DWConv(input_nc, ndf, kernel_size=kw, stride=2, padding=padw), nn.LeakyReLU(0.2, True)]]
 
         nf = ndf
         for n in range(1, n_layers):
             nf_prev = nf
             nf = min(nf * 2, 512)
             sequence += [[
-                nn.Conv2d(nf_prev, nf, kernel_size=kw, stride=2, padding=padw),
+                DWConv(nf_prev, nf, kernel_size=kw, stride=2, padding=padw),
                 norm_layer(nf), nn.LeakyReLU(0.2, True)
             ]]
 
         nf_prev = nf
         nf = min(nf * 2, 512)
         sequence += [[
-            nn.Conv2d(nf_prev, nf, kernel_size=kw, stride=1, padding=padw),
+            DWConv(nf_prev, nf, kernel_size=kw, stride=1, padding=padw),
             norm_layer(nf),
             nn.LeakyReLU(0.2, True)
         ]]
 
         if use_sigmoid:
-            sequence += [[nn.Conv2d(nf, 1, kernel_size=kw, stride=1, padding=padw), nn.Sigmoid()]]
+            sequence += [[DWConv(nf, 1, kernel_size=kw, stride=1, padding=padw), nn.Sigmoid()]]
         else:
-            sequence += [[nn.Conv2d(nf, 1, kernel_size=kw, stride=1, padding=padw)]]
+            sequence += [[DWConv(nf, 1, kernel_size=kw, stride=1, padding=padw)]]
 
         if getIntermFeat:
             for n in range(len(sequence)):
