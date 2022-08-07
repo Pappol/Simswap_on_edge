@@ -42,6 +42,7 @@ if __name__ == '__main__':
         img_a = transformer_Arcface(img_a)
         img_id = img_a.view(-1, img_a.shape[0], img_a.shape[1], img_a.shape[2])
 
+
         pic_b = opt.pic_b_path
 
         img_b = Image.open(pic_b).convert('RGB')
