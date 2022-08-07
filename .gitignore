@@ -145,3 +145,4 @@ arcface_model/
 demo_file/
 docs/
 onnx-tensorflow/
+makefile
