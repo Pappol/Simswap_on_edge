@@ -14,7 +14,7 @@ from parsing_model.resnet import Resnet18
 class ConvBNReLU(nn.Module):
     def __init__(self, in_chan, out_chan, ks=3, stride=1, padding=1, *args, **kwargs):
         super(ConvBNReLU, self).__init__()
-        self.conv = nn.Conv2d(in_chan,
+        self.conv = DWConv(in_chan,
                 out_chan,
                 kernel_size = ks,
                 stride = stride,
@@ -30,7 +30,7 @@ class ConvBNReLU(nn.Module):
 
     def init_weight(self):
         for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
+            if isinstance(ly, DWConv):
                 nn.init.kaiming_normal_(ly.weight, a=1)
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 
@@ -38,7 +38,7 @@ class BiSeNetOutput(nn.Module):
     def __init__(self, in_chan, mid_chan, n_classes, *args, **kwargs):
         super(BiSeNetOutput, self).__init__()
         self.conv = ConvBNReLU(in_chan, mid_chan, ks=3, stride=1, padding=1)
-        self.conv_out = nn.Conv2d(mid_chan, n_classes, kernel_size=1, bias=False)
+        self.conv_out = DWConv(mid_chan, n_classes, kernel_size=1, bias=False)
         self.init_weight()
 
     def forward(self, x):
@@ -48,14 +48,14 @@ class BiSeNetOutput(nn.Module):
 
     def init_weight(self):
         for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
+            if isinstance(ly, DWConv):
                 nn.init.kaiming_normal_(ly.weight, a=1)
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 
     def get_params(self):
         wd_params, nowd_params = [], []
         for name, module in self.named_modules():
-            if isinstance(module, nn.Linear) or isinstance(module, nn.Conv2d):
+            if isinstance(module, nn.Linear) or isinstance(module, DWConv):
                 wd_params.append(module.weight)
                 if not module.bias is None:
                     nowd_params.append(module.bias)
@@ -68,7 +68,7 @@ class AttentionRefinementModule(nn.Module):
     def __init__(self, in_chan, out_chan, *args, **kwargs):
         super(AttentionRefinementModule, self).__init__()
         self.conv = ConvBNReLU(in_chan, out_chan, ks=3, stride=1, padding=1)
-        self.conv_atten = nn.Conv2d(out_chan, out_chan, kernel_size= 1, bias=False)
+        self.conv_atten = DWConv(out_chan, out_chan, kernel_size= 1, bias=False)
         self.bn_atten = nn.BatchNorm2d(out_chan)
         self.sigmoid_atten = nn.Sigmoid()
         self.init_weight()
@@ -84,7 +84,7 @@ class AttentionRefinementModule(nn.Module):
 
     def init_weight(self):
         for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
+            if isinstance(ly, DWConv):
                 nn.init.kaiming_normal_(ly.weight, a=1)
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 
@@ -126,14 +126,14 @@ class ContextPath(nn.Module):
 
     def init_weight(self):
         for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
+            if isinstance(ly, DWConv):
                 nn.init.kaiming_normal_(ly.weight, a=1)
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 
     def get_params(self):
         wd_params, nowd_params = [], []
         for name, module in self.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)):
+            if isinstance(module, (nn.Linear, DWConv)):
                 wd_params.append(module.weight)
                 if not module.bias is None:
                     nowd_params.append(module.bias)
@@ -161,14 +161,14 @@ class SpatialPath(nn.Module):
 
     def init_weight(self):
         for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
+            if isinstance(ly, DWConv):
                 nn.init.kaiming_normal_(ly.weight, a=1)
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 
     def get_params(self):
         wd_params, nowd_params = [], []
         for name, module in self.named_modules():
-            if isinstance(module, nn.Linear) or isinstance(module, nn.Conv2d):
+            if isinstance(module, nn.Linear) or isinstance(module, DWConv):
                 wd_params.append(module.weight)
                 if not module.bias is None:
                     nowd_params.append(module.bias)
@@ -181,13 +181,13 @@ class FeatureFusionModule(nn.Module):
     def __init__(self, in_chan, out_chan, *args, **kwargs):
         super(FeatureFusionModule, self).__init__()
         self.convblk = ConvBNReLU(in_chan, out_chan, ks=1, stride=1, padding=0)
-        self.conv1 = nn.Conv2d(out_chan,
+        self.conv1 = DWConv(out_chan,
                 out_chan//4,
                 kernel_size = 1,
                 stride = 1,
                 padding = 0,
                 bias = False)
-        self.conv2 = nn.Conv2d(out_chan//4,
+        self.conv2 = DWConv(out_chan//4,
                 out_chan,
                 kernel_size = 1,
                 stride = 1,
@@ -211,14 +211,14 @@ class FeatureFusionModule(nn.Module):
 
     def init_weight(self):
         for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
+            if isinstance(ly, DWConv):
                 nn.init.kaiming_normal_(ly.weight, a=1)
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 
     def get_params(self):
         wd_params, nowd_params = [], []
         for name, module in self.named_modules():
-            if isinstance(module, nn.Linear) or isinstance(module, nn.Conv2d):
+            if isinstance(module, nn.Linear) or isinstance(module, DWConv):
                 wd_params.append(module.weight)
                 if not module.bias is None:
                     nowd_params.append(module.bias)
@@ -255,7 +255,7 @@ class BiSeNet(nn.Module):
 
     def init_weight(self):
         for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
+            if isinstance(ly, DWConv):
                 nn.init.kaiming_normal_(ly.weight, a=1)
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 

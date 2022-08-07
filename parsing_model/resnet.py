@@ -13,7 +13,7 @@ resnet18_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+    return DWConv(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=1, bias=False)
 
 
@@ -28,7 +28,7 @@ class BasicBlock(nn.Module):
         self.downsample = None
         if in_chan != out_chan or stride != 1:
             self.downsample = nn.Sequential(
-                nn.Conv2d(in_chan, out_chan,
+                DWConv(in_chan, out_chan,
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(out_chan),
                 )
@@ -58,7 +58,7 @@ def create_layer_basic(in_chan, out_chan, bnum, stride=1):
 class Resnet18(nn.Module):
     def __init__(self):
         super(Resnet18, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
+        self.conv1 = DWConv(3, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -90,7 +90,7 @@ class Resnet18(nn.Module):
     def get_params(self):
         wd_params, nowd_params = [], []
         for name, module in self.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)):
+            if isinstance(module, (nn.Linear, DWConv)):
                 wd_params.append(module.weight)
                 if not module.bias is None:
                     nowd_params.append(module.bias)
