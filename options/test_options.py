@@ -1,11 +1,4 @@
-'''
-Author: Naiyuan liu
-Github: https://github.com/NNNNAI
-Date: 2021-11-23 17:03:58
-LastEditors: Naiyuan liu
-LastEditTime: 2021-11-23 17:08:08
-Description: 
-'''
+
 from .base_options import BaseOptions
 
 class TestOptions(BaseOptions):
@@ -22,7 +15,7 @@ class TestOptions(BaseOptions):
         self.parser.add_argument("--export_onnx", type=str, help="export ONNX model to a given file")
         self.parser.add_argument("--engine", type=str, help="run serialized TRT engine")
         self.parser.add_argument("--onnx", type=str, help="run ONNX model via TRT")        
-        self.parser.add_argument("--Arc_path", type=str, default='models/BEST_checkpoint.tar', help="run ONNX model via TRT")
+        self.parser.add_argument("--Arc_path", type=str, default='arcface_model/arcface_checkpoint.tar', help="run ONNX model via TRT")
         self.parser.add_argument("--pic_a_path", type=str, default='./crop_224/gdg.jpg', help="Person who provides identity information")
         self.parser.add_argument("--pic_b_path", type=str, default='./crop_224/zrf.jpg', help="Person who provides information other than their identity")
         self.parser.add_argument("--pic_specific_path", type=str, default='./crop_224/zrf.jpg', help="The specific person to be swapped")

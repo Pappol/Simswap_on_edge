@@ -16,7 +16,7 @@ from os import listdir
 from os.path import isfile, join
 
 
-def convert_model(model_path, output_path):
+def convert_model():
     opt = TestOptions().parse()
     transformer = transforms.Compose([
             transforms.ToTensor(),
@@ -120,8 +120,8 @@ def standard_quantization(model_path):
 def main():
     #arguments
     model_path = "output/"
-
-    standard_quantization(model_path)
+    convert_model()
+   # standard_quantization(model_path)
 
 
 
