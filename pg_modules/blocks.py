@@ -3,8 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils import spectral_norm
-from .depthwise import DWConv
-from .depthwise import DWConvTranspose2d
+
 
 ### single layers
 
@@ -212,7 +211,7 @@ class DownBlockPatch(nn.Module):
 class ResidualConvUnit(nn.Module):
     def __init__(self, cin, activation, bn):
         super().__init__()
-        self.conv = DWConv(cin, cin, kernel_size=3, stride=1, padding=1, bias=True)
+        self.conv = nn.Conv2d(cin, cin, kernel_size=3, stride=1, padding=1, bias=True)
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x):
@@ -231,7 +230,7 @@ class FeatureFusionBlock(nn.Module):
         if self.expand==True:
             out_features = features//2
 
-        self.out_conv = DWConv(features, out_features, kernel_size=1, stride=1, padding=0, bias=True)
+        self.out_conv = nn.Conv2d(features, out_features, kernel_size=1, stride=1, padding=0, bias=True)
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, *xs):

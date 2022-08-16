@@ -6,8 +6,6 @@ import os
 from torch.autograd import Variable
 from .base_model import BaseModel
 from . import networks
-from .depthwise import DWConv
-from .depthwise import DWConvTranspose2d
 
 class SpecificNorm(nn.Module):
     def __init__(self, epsilon=1e-8):

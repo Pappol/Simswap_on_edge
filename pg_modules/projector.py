@@ -2,18 +2,17 @@ import torch
 import torch.nn as nn
 import timm
 from pg_modules.blocks import FeatureFusionBlock
-from .depthwise import DWConv
-from .depthwise import DWConvTranspose2d
+
 
 
 def _make_scratch_ccm(scratch, in_channels, cout, expand=False):
     # shapes
     out_channels = [cout, cout*2, cout*4, cout*8] if expand else [cout]*4
 
-    scratch.layer0_ccm = DWConv(in_channels[0], out_channels[0], kernel_size=1, stride=1, padding=0, bias=True)
-    scratch.layer1_ccm = DWConv(in_channels[1], out_channels[1], kernel_size=1, stride=1, padding=0, bias=True)
-    scratch.layer2_ccm = DWConv(in_channels[2], out_channels[2], kernel_size=1, stride=1, padding=0, bias=True)
-    scratch.layer3_ccm = DWConv(in_channels[3], out_channels[3], kernel_size=1, stride=1, padding=0, bias=True)
+    scratch.layer0_ccm = nn.Conv2d(in_channels[0], out_channels[0], kernel_size=1, stride=1, padding=0, bias=True)
+    scratch.layer1_ccm = nn.Conv2d(in_channels[1], out_channels[1], kernel_size=1, stride=1, padding=0, bias=True)
+    scratch.layer2_ccm = nn.Conv2d(in_channels[2], out_channels[2], kernel_size=1, stride=1, padding=0, bias=True)
+    scratch.layer3_ccm = nn.Conv2d(in_channels[3], out_channels[3], kernel_size=1, stride=1, padding=0, bias=True)
 
     scratch.CHANNELS = out_channels
 
