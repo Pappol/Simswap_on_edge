@@ -9,6 +9,29 @@ from torchvision import transforms
 import torch
 import cv2
 
+def test_latent_id(args):
+    target =cv2.imread(args.pic_a_path).astype(np.float32)
+    target = cv2.resize(target, (224, 224))
+    target = cv2.cvtColor(target, cv2.COLOR_BGR2RGB)
+
+    target = (np.transpose(target, (2,0,1)))/255.0
+    target = target[np.newaxis,:]
+
+    interpreter = tflite.Interpreter(args.model_path, num_threads=4)
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    latent_id = torch.load('output/latent_id.pth')
+    #convert to numpy
+    latent_id = latent_id.numpy()
+    #print dimensions of latent_id
+    print ("Latent id shape: ", latent_id.shape)
+    #print input details dimensions
+    for i in input_details:
+        print(i['shape'])
+
+
 def long_benchmark(args):
     #load data
     transformer = transforms.Compose([
@@ -39,8 +62,8 @@ def long_benchmark(args):
     #inference
     for i in range(10):
         start = time.time()
-        interpreter.set_tensor(input_details[0]['index'],latent_id.numpy())
-        interpreter.set_tensor(input_details[1]['index'], img_id.numpy())
+        interpreter.set_tensor(input_details[1]['index'],latent_id.numpy())
+        interpreter.set_tensor(input_details[0]['index'], img_id.numpy())
         interpreter.invoke()
         output_data = interpreter.get_tensor(output_details[0]['index'])
         end = time.time()
@@ -57,12 +80,14 @@ def tester(args):
     target = (np.transpose(target, (2,0,1)))/255.0
     target = target[np.newaxis,:]
 
-    interpreter = tflite.Interpreter(args.model_path, num_threads=24)
+    interpreter = tflite.Interpreter(args.model_path, num_threads=4)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
     latent_id = torch.load('output/latent_id.pth')
+    #convert to numpy
+    latent_id = latent_id.numpy()
 
     #inference
     start = time.time()
@@ -103,7 +128,7 @@ def benchmark(args):
     img_id = img_a.view(-1, img_a.shape[0], img_a.shape[1], img_a.shape[2])
 
     #create interpreter
-    interpreter = tflite.Interpreter(args.model_path, num_threads=24)
+    interpreter = tflite.Interpreter(args.model_path, num_threads=4)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -141,13 +166,16 @@ def benchmark(args):
     result.save('output/result.png')
 
 def main(args):
+    #test_latent_id(args)
     tester(args)
-    
+    #benchmark(args)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_path", type=str, default="output/model.tflite",
                             help="path of onnx extra data folder"),
-    parser.add_argument("--pic_a_path", type=str, default="./crop_224/gdg.jpg",
+    parser.add_argument("--pic_a_path", type=str, default="./crop_224/mtdm.jpg",
                             help="path of image a"),
     parser.add_argument("--output_path", type=str, default="output/",
                             help="path of output folder"),

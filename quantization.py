@@ -1,3 +1,4 @@
+from http.client import SWITCHING_PROTOCOLS
 from re import T
 import tensorflow as tf
 import os
@@ -117,15 +118,13 @@ def standard_quantization(model_path):
     with open(model_path + "model.tflite" , 'wb') as f:
         f.write(tflite_quant_model)
 
-def main():
+def main(argument):
     #arguments
     model_path = "output/"
     convert_model()
-   # standard_quantization(model_path)
-
-
+    standard_quantization(model_path)
 
 
 if __name__ == "__main__":
-
-    main()
+    argument = "c"
+    main(argument)
