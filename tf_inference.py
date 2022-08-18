@@ -62,8 +62,8 @@ def long_benchmark(args):
     #inference
     for i in range(10):
         start = time.time()
-        interpreter.set_tensor(input_details[1]['index'],latent_id.numpy())
-        interpreter.set_tensor(input_details[0]['index'], img_id.numpy())
+        interpreter.set_tensor(input_details[0]['index'],latent_id.numpy())
+        interpreter.set_tensor(input_details[1]['index'], img_id.numpy())
         interpreter.invoke()
         output_data = interpreter.get_tensor(output_details[0]['index'])
         end = time.time()
@@ -148,8 +148,8 @@ def benchmark(args):
 
     #inference
     start = time.time()
-    interpreter.set_tensor(input_details[0]['index'],latent_id.numpy())
-    interpreter.set_tensor(input_details[1]['index'], img_id.numpy())
+    interpreter.set_tensor(input_details[1]['index'],latent_id.numpy())
+    interpreter.set_tensor(input_details[0]['index'], img_id.numpy())
     interpreter.invoke()
     output_data = interpreter.get_tensor(output_details[0]['index'])
     end = time.time()
@@ -167,8 +167,8 @@ def benchmark(args):
 
 def main(args):
     #test_latent_id(args)
-    tester(args)
-    #benchmark(args)
+    #tester(args)
+    long_benchmark(args)
 
 
 if __name__ == "__main__":
