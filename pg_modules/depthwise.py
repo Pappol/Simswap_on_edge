@@ -32,3 +32,17 @@ class DWConvTranspose2d(nn.ConvTranspose2d):
     # Depth-wise transpose convolution class
     def __init__(self, c1, c2, k=1, stride=1, p1=0, p2=0):  # ch_in, ch_out, kernel, stride, padding, padding_out
         super().__init__(c1, c2, k, stride, p1, p2, groups=math.gcd(c1, c2))
+
+
+class DepthwiseSeparableConv(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', device=None, dtype=None):
+        super().__init__()
+        self.depthwise_conv = nn.Conv2d(in_channels, in_channels, kernel_size, stride, padding, dilation, groups=in_channels, bias=bias, padding_mode=padding_mode)
+        self.pointwise_conv = nn.Conv2d(in_channels, out_channels, 1, 1, 0, 1, groups=1, bias=bias, padding_mode=padding_mode)
+        self.device = device
+        self.dtype = dtype
+
+    def forward(self, x):
+        x = self.depthwise_conv(x)
+        x = self.pointwise_conv(x)
+        return x

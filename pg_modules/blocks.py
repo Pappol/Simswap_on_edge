@@ -171,7 +171,7 @@ class SeparableConv2d(nn.Module):
 
 
 class DownBlock(nn.Module):
-    def __init__(self, in_planes, out_planes, separable=False):
+    def __init__(self, in_planes, out_planes, separable=True):
         super().__init__()
         if not separable:
             self.main = nn.Sequential(
@@ -192,7 +192,7 @@ class DownBlock(nn.Module):
 
 
 class DownBlockPatch(nn.Module):
-    def __init__(self, in_planes, out_planes, separable=False):
+    def __init__(self, in_planes, out_planes, separable=True):
         super().__init__()
         self.main = nn.Sequential(
             DownBlock(in_planes, out_planes, separable),

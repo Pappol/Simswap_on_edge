@@ -1,5 +1,6 @@
 
 import torch
+from .depthwise import *
 import torch.nn as nn
 
 
@@ -88,19 +89,19 @@ class Generator_Adain_Upsample(nn.Module):
         activation = nn.ReLU(True)
         self.deep = deep
 
-        self.first_layer = nn.Sequential(nn.ReflectionPad2d(3), nn.Conv2d(input_nc, 32, kernel_size=7, padding=0),
+        self.first_layer = nn.Sequential(nn.ReflectionPad2d(3), DWConv(input_nc, 32, kernel_size=7, padding=0),
                                          norm_layer(32), activation)
         ### downsample
-        self.down0 = nn.Sequential(nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+        self.down0 = nn.Sequential(DWConv(32, 64, kernel_size=3, stride=2, padding=1),
                                    norm_layer(64), activation)
-        self.down1 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),
+        self.down1 = nn.Sequential(DWConv(64, 128, kernel_size=3, stride=2, padding=1),
                                    norm_layer(128), activation)
-        self.down2 = nn.Sequential(nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),
+        self.down2 = nn.Sequential(DWConv(128, 256, kernel_size=3, stride=2, padding=1),
                                    norm_layer(256), activation)
-        self.down3 = nn.Sequential(nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1),
+        self.down3 = nn.Sequential(DWConv(256, 512, kernel_size=3, stride=2, padding=1),
                                    norm_layer(512), activation)
         if self.deep:
-            self.down4 = nn.Sequential(nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1),
+            self.down4 = nn.Sequential(DWConv(512, 512, kernel_size=3, stride=2, padding=1),
                                        norm_layer(512), activation)
 
         ### resnet blocks
@@ -113,30 +114,30 @@ class Generator_Adain_Upsample(nn.Module):
         if self.deep:
             self.up4 = nn.Sequential(
                 nn.Upsample(scale_factor=2, mode='bilinear'),
-                nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
+                DWConv(512, 512, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(512), activation
             )
         self.up3 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+            DWConv(512, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(256), activation
         )
         self.up2 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
+            DWConv(256, 128, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(128), activation
         )
         self.up1 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
+            DWConv(128, 64, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(64), activation
         )
         self.up0 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1),
+            DWConv(64, 32, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(32), activation
         )
-        self.last_layer = nn.Sequential(nn.ReflectionPad2d(3), nn.Conv2d(32, output_nc, kernel_size=7, padding=0),
+        self.last_layer = nn.Sequential(nn.ReflectionPad2d(3), DWConv(32, output_nc, kernel_size=7, padding=0),
                                         nn.Tanh())
 
     def forward(self, input, dlatents):
