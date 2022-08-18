@@ -6,10 +6,7 @@ from .depthwise import *
 
 class InstanceNorm(nn.Module):
     def __init__(self, epsilon=1e-8):
-        """
-            @notice: avoid in-place ops.
-            https://discuss.pytorch.org/t/encounter-the-runtimeerror-one-of-the-variables-needed-for-gradient-computation-has-been-modified-by-an-inplace-operation/836/3
-        """
+
         super(InstanceNorm, self).__init__()
         self.epsilon = epsilon
 
@@ -20,9 +17,7 @@ class InstanceNorm(nn.Module):
         return x * tmp
 
 class ApplyStyle(nn.Module):
-    """
-        @ref: https://github.com/lernapparat/lernapparat/blob/master/style_gan/pytorch_style_gan.ipynb
-    """
+
     def __init__(self, latent_size, channels):
         super(ApplyStyle, self).__init__()
         self.linear = nn.Linear(latent_size, channels * 2)
@@ -49,7 +44,7 @@ class ResnetBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv1 += [DWConv(dim, dim, kernel_size=3, padding = p), InstanceNorm()]
+        conv1 += [nn.Conv2d(dim, dim, kernel_size=3, padding = p), InstanceNorm()]
         self.conv1 = nn.Sequential(*conv1)
         self.style1 = ApplyStyle(latent_size, dim)
         self.act1 = activation
@@ -64,7 +59,7 @@ class ResnetBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv2 += [DWConv(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
+        conv2 += [nn.Conv2d(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
         self.conv2 = nn.Sequential(*conv2)
         self.style2 = ApplyStyle(latent_size, dim)
 
@@ -133,7 +128,7 @@ class Generator_Adain_Upsample(nn.Module):
             DWConv(128, 64, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(64), activation
         )
-        self.last_layer = nn.Sequential(nn.ReflectionPad2d(3), DWConv(64, output_nc, kernel_size=5, padding=0))
+        self.last_layer = nn.Sequential(nn.ReflectionPad2d(3), DWConv(64, output_nc, kernel_size=7, padding=0))
 
     def forward(self, input, dlatents):
         x = input  # 3*224*224

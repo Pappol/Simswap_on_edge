@@ -64,7 +64,7 @@ class ResnetBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv2 += [DWConv(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
+        conv2 += [nn.Conv2d(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
         self.conv2 = nn.Sequential(*conv2)
         self.style2 = ApplyStyle(latent_size, dim)
 
@@ -130,7 +130,7 @@ class Generator_Adain_Upsample(nn.Module):
             DWConv(128, 64, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(64), activation
         )
-        self.last_layer = nn.Sequential(nn.ReflectionPad2d(3), DWConv(64, output_nc, kernel_size=5, padding=0),
+        self.last_layer = nn.Sequential(nn.ReflectionPad2d(3), DWConv(64, output_nc, kernel_size=7, padding=0),
                                         nn.Tanh())
 
     def forward(self, input, dlatents):
