@@ -6,10 +6,6 @@ from .depthwise import *
 
 class InstanceNorm(nn.Module):
     def __init__(self, epsilon=1e-8):
-        """
-            @notice: avoid in-place ops.
-            https://discuss.pytorch.org/t/encounter-the-runtimeerror-one-of-the-variables-needed-for-gradient-computation-has-been-modified-by-an-inplace-operation/836/3
-        """
         super(InstanceNorm, self).__init__()
         self.epsilon = epsilon
 
@@ -20,9 +16,7 @@ class InstanceNorm(nn.Module):
         return x * tmp
 
 class ApplyStyle(nn.Module):
-    """
-        @ref: https://github.com/lernapparat/lernapparat/blob/master/style_gan/pytorch_style_gan.ipynb
-    """
+
     def __init__(self, latent_size, channels):
         super(ApplyStyle, self).__init__()
         self.linear = nn.Linear(latent_size, channels * 2)
@@ -64,7 +58,7 @@ class ResnetBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv2 += [nn.Conv2d(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
+        conv2 += [DWConv(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
         self.conv2 = nn.Sequential(*conv2)
         self.style2 = ApplyStyle(latent_size, dim)
 
