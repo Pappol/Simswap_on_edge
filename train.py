@@ -48,7 +48,7 @@ class TrainOptions:
         self.parser.add_argument('--use_tensorboard', type=str2bool, default='False')
 
         # for training
-        self.parser.add_argument('--dataset', type=str, default="/path/to/VGGFace2", help='path to the face swapping dataset')
+        self.parser.add_argument('--dataset', type=str, default="./crop_224/vggface2_crop_arcfacealign_224/", help='path to the face swapping dataset')
         self.parser.add_argument('--continue_train', type=str2bool, default='False', help='continue training: load the latest model')
         self.parser.add_argument('--load_pretrain', type=str, default='./checkpoints/simswap224_test', help='load the pretrained model from the specified location')
         self.parser.add_argument('--which_epoch', type=str, default='10000', help='which epoch to load? set to latest to use latest cached model')
@@ -66,9 +66,9 @@ class TrainOptions:
 
         self.parser.add_argument("--Arc_path", type=str, default='arcface_model/arcface_checkpoint.tar', help="run ONNX model via TRT")
         self.parser.add_argument("--total_step", type=int, default=1000000, help='total training step')
-        self.parser.add_argument("--log_frep", type=int, default=200, help='frequence for printing log information')
+        self.parser.add_argument("--log_frep", type=int, default=100, help='frequence for printing log information')
         self.parser.add_argument("--sample_freq", type=int, default=1000, help='frequence for sampling')
-        self.parser.add_argument("--model_freq", type=int, default=10000, help='frequence for saving the model')
+        self.parser.add_argument("--model_freq", type=int, default=5000, help='frequence for saving the model')
 
         
 

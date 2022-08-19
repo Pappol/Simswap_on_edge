@@ -1,16 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding:utf-8 -*-
-#############################################################
-# File: fs_model_fix_idnorm_donggp_saveoptim copy.py
-# Created Date: Wednesday January 12th 2022
-# Author: Chen Xuanhong
-# Email: chenxuanhongzju@outlook.com
-# Last Modified:  Thursday, 21st April 2022 8:13:37 pm
-# Modified By: Chen Xuanhong
-# Copyright (c) 2022 Shanghai Jiao Tong University
-#############################################################
-
-
 import torch
 import torch.nn as nn
 

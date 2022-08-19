@@ -9,10 +9,7 @@ from . import networks
 
 class SpecificNorm(nn.Module):
     def __init__(self, epsilon=1e-8):
-        """
-            @notice: avoid in-place ops.
-            https://discuss.pytorch.org/t/encounter-the-runtimeerror-one-of-the-variables-needed-for-gradient-computation-has-been-modified-by-an-inplace-operation/836/3
-        """
+
         super(SpecificNorm, self).__init__()
         self.mean = np.array([0.485, 0.456, 0.406])
         self.mean = torch.from_numpy(self.mean).float().cuda()
