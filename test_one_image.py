@@ -55,7 +55,6 @@ def benchmark(model, path):
                 row2 = torch.cat([row2, img_att[i]], dim=2)
                 row3 = torch.cat([row3, img_fake[i]], dim=2)
 
-        #full = torch.cat([row1, row2, row3], dim=1).detach()
         full = row3.detach()
         full = full.permute(1, 2, 0)
         output = full.to('cpu')
@@ -85,6 +84,40 @@ detransformer = transforms.Compose([
         transforms.Normalize([-0.485, -0.456, -0.406], [1, 1, 1])
     ])
 
+def print_model_parameters(model, opt):
+
+    model.eval()
+    pic_a = opt.pic_a_path
+    img_a = Image.open(pic_a).convert('RGB')
+    img_a = transformer_Arcface(img_a)
+    img_id = img_a.view(-1, img_a.shape[0], img_a.shape[1], img_a.shape[2])
+
+    pic_b = opt.pic_b_path
+
+    img_b = Image.open(pic_b).convert('RGB')
+    img_b = transformer(img_b)
+    img_att = img_b.view(-1, img_b.shape[0], img_b.shape[1], img_b.shape[2])
+
+    # convert numpy to tensor
+    img_id = img_id.cuda()
+    img_att = img_att.cuda()
+
+    #create latent id
+    img_id_downsample = F.interpolate(img_id, size=(112,112))
+    latend_id = model.netArc(img_id_downsample)
+    latend_id = latend_id.detach().to('cpu')
+    latend_id = latend_id/np.linalg.norm(latend_id,axis=1,keepdims=True)
+    print("-------------Type--------------")
+    print(type(img_id))
+    print(type(img_att))
+    print (type(latend_id))
+    print (type(latend_id))
+    print (type(True))
+    print("-------------Shape--------------")
+    print(img_id.shape)
+    print(img_att.shape)
+    print(latend_id.shape)
+    print(latend_id.shape)
 
 def test_one_image(opt):
     torch.nn.Module.dump_patches = True
@@ -115,6 +148,7 @@ def test_one_image(opt):
         latend_id = latend_id/np.linalg.norm(latend_id,axis=1,keepdims=True)
 
         print (type(latend_id))
+
         latend_id = latend_id.to('cuda')
 
 
@@ -145,8 +179,8 @@ def test_one_image(opt):
 def main(opt):
     torch.nn.Module.dump_patches = True
     model = create_model(opt)
-    benchmark(model, "./crop_224/*.jpg")
-
+    print_model_parameters(model, opt)
+    
 if __name__ == '__main__':
     opt = TestOptions().parse()
 

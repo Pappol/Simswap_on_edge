@@ -337,10 +337,7 @@ class ResnetBlock(nn.Module):
 
 class InstanceNorm(nn.Module):
     def __init__(self, epsilon=1e-8):
-        """
-            @notice: avoid in-place ops.
-            https://discuss.pytorch.org/t/encounter-the-runtimeerror-one-of-the-variables-needed-for-gradient-computation-has-been-modified-by-an-inplace-operation/836/3
-        """
+
         super(InstanceNorm, self).__init__()
         self.epsilon = epsilon
 
@@ -352,10 +349,7 @@ class InstanceNorm(nn.Module):
 
 class SpecificNorm(nn.Module):
     def __init__(self, epsilon=1e-8):
-        """
-            @notice: avoid in-place ops.
-            https://discuss.pytorch.org/t/encounter-the-runtimeerror-one-of-the-variables-needed-for-gradient-computation-has-been-modified-by-an-inplace-operation/836/3
-        """
+
         super(SpecificNorm, self).__init__()
         self.mean = np.array([0.485, 0.456, 0.406])
         self.mean = torch.from_numpy(self.mean).float().cuda()
@@ -374,9 +368,7 @@ class SpecificNorm(nn.Module):
         return x
 
 class ApplyStyle(nn.Module):
-    """
-        @ref: https://github.com/lernapparat/lernapparat/blob/master/style_gan/pytorch_style_gan.ipynb
-    """
+
     def __init__(self, latent_size, channels):
         super(ApplyStyle, self).__init__()
         self.linear = nn.Linear(latent_size, channels * 2)
