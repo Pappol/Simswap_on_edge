@@ -6,10 +6,6 @@ import torch.nn as nn
 
 class InstanceNorm(nn.Module):
     def __init__(self, epsilon=1e-8):
-        """
-            @notice: avoid in-place ops.
-            https://discuss.pytorch.org/t/encounter-the-runtimeerror-one-of-the-variables-needed-for-gradient-computation-has-been-modified-by-an-inplace-operation/836/3
-        """
         super(InstanceNorm, self).__init__()
         self.epsilon = epsilon
 
@@ -20,9 +16,7 @@ class InstanceNorm(nn.Module):
         return x * tmp
 
 class ApplyStyle(nn.Module):
-    """
-        @ref: https://github.com/lernapparat/lernapparat/blob/master/style_gan/pytorch_style_gan.ipynb
-    """
+
     def __init__(self, latent_size, channels):
         super(ApplyStyle, self).__init__()
         self.linear = nn.Linear(latent_size, channels * 2)
