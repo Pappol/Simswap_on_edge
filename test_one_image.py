@@ -179,7 +179,7 @@ def test_one_image(opt):
 def main(opt):
     torch.nn.Module.dump_patches = True
     model = create_model(opt)
-    print_model_parameters(model, opt)
+    benchmark(model, "./crop_224/*.jpg")
     
 if __name__ == '__main__':
     opt = TestOptions().parse()

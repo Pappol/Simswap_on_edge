@@ -51,7 +51,7 @@ def long_benchmark(args):
     img_id = img_a.view(-1, img_a.shape[0], img_a.shape[1], img_a.shape[2])
 
     #create interpreter
-    interpreter = tflite.Interpreter(args.model_path, num_threads=4)
+    interpreter = tflite.Interpreter(args.model_path, num_threads=24)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -128,7 +128,7 @@ def benchmark(args):
     img_id = img_a.view(-1, img_a.shape[0], img_a.shape[1], img_a.shape[2])
 
     #create interpreter
-    interpreter = tflite.Interpreter(args.model_path, num_threads=4)
+    interpreter = tflite.Interpreter(args.model_path, num_threads=24)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
