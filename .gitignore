@@ -137,7 +137,6 @@ checkpoints/
 *.pdf
 *.pptx
 
-*.pth
 *.onnx
 wandb/
 crop_224/
