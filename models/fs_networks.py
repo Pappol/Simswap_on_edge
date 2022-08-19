@@ -43,7 +43,7 @@ class ResnetBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv1 += [nn.Conv2d(dim, dim, kernel_size=3, padding = p), InstanceNorm()]
+        conv1 += [DepthwiseSeparableConv(dim, dim, kernel_size=3, padding = p), InstanceNorm()]
         self.conv1 = nn.Sequential(*conv1)
         self.style1 = ApplyStyle(latent_size, dim)
         self.act1 = activation
@@ -58,7 +58,7 @@ class ResnetBlock_Adain(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv2 += [nn.Conv2d(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
+        conv2 += [DepthwiseSeparableConv(dim, dim, kernel_size=3, padding=p), InstanceNorm()]
         self.conv2 = nn.Sequential(*conv2)
         self.style2 = ApplyStyle(latent_size, dim)
 
