@@ -1,11 +1,8 @@
-cd /WORKDIR
-
 gh auth login
 
 git clone https://github.com/Pappol/simswap_on_edge
 
 cd simswap_on_edge 
-conda env create -f environment.yml
 
 conda activate simswap 
 
