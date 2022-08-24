@@ -1,5 +1,6 @@
 
 from cgi import test
+from copyreg import pickle
 import cv2
 import torch
 import fractions
@@ -11,6 +12,12 @@ from models.models import create_model
 from options.test_options import TestOptions
 import time
 import os
+import PIL
+from PIL import Image 
+from models.projected_model import fsModel
+from torchvision import transforms as T
+from data.data_loader_Swapping import GetLoader
+
 import glob
 
 def benchmark(model, path):
@@ -120,7 +127,16 @@ def print_model_parameters(model, opt):
     print(latend_id.shape)
     print(latend_id.shape)
 
-def test_one_image(opt):
+
+def postprocess(x):
+    """[0,1] to uint8."""
+    x = np.clip(255 * x, 0, 255)
+    x = np.cast[np.uint8](x)
+    return x
+
+
+def old_test_one_image(opt):
+
     torch.nn.Module.dump_patches = True
     model = create_model(opt)
     model.eval()
@@ -147,41 +163,92 @@ def test_one_image(opt):
         latend_id = model.netArc(img_id_downsample)
         latend_id = latend_id.detach().to('cpu')
         latend_id = latend_id/np.linalg.norm(latend_id,axis=1,keepdims=True)
-
-        print (type(latend_id))
-
         latend_id = latend_id.to('cuda')
 
 
         ############## Forward Pass ######################
         img_fake = model(img_id, img_att, latend_id, latend_id, True)
 
+        full = img_fake[0].detach()
+        imagenet_std    = torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1).cuda()
+        imagenet_mean   = torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1).cuda()
+        full = full * imagenet_std + imagenet_mean
+
+        full = full.permute(1, 2, 0)
+        output = full.to('cpu')
+        output = postprocess(output)
+        output = output*255
+        
+
+        cv2.imwrite(opt.output_path + 'result.jpg',output)
+
+def test_one_image(opt):
+    train_loader    = GetLoader('crop_224/vggface2_crop_arcfacealign_224/',opt.batchSize,8,1234)
+    src_image1, src_image2  = train_loader.next()
+    imagenet_std    = torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1)
+    imagenet_mean   = torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1)
+    model = create_model(opt)    
+    model.netG.eval()
+
+
+    with torch.no_grad():
+        arcface_112     = F.interpolate(src_image2,size=(112,112), mode='bicubic')
+        id_vector_src1  = model.netArc(arcface_112)
+        id_vector_src1  = F.normalize(id_vector_src1, p=2, dim=1)
+        img_fake = model.netG(src_image1, id_vector_src1).cpu()
+        img_fake    = img_fake[0] * imagenet_std
+        img_fake    = img_fake + imagenet_mean
+        img_fake    = img_fake.numpy()
+
+        img_fake    = postprocess(img_fake)
+        Image.save(opt.output_path + 'result.jpg',img_fake)
+
+
+def test_from_train(opt):
+    train_loader    = GetLoader('crop_224/vggface2_crop_arcfacealign_224/',opt.batchSize,8,1234)
+    src_image1, src_image2  = train_loader.next()
+    imagenet_std    = torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1)
+    imagenet_mean   = torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1)
+
+    model = fsModel()
+
+    model.initialize(opt)
+    model.netG.eval()
+
+    pic_a = opt.pic_a_path
+    img_a = Image.open(pic_a).convert('RGB')
+    img_a = transformer_Arcface(img_a)
+    img_id = img_a.view(-1, img_a.shape[0], img_a.shape[1], img_a.shape[2])
+
+    with torch.no_grad():
+        arcface_112     = F.interpolate(src_image2,size=(112,112), mode='bicubic')
+        id_vector_src1  = model.netArc(arcface_112)
+        id_vector_src1  = F.normalize(id_vector_src1, p=2, dim=1)
+        img_fake = model.netG(src_image1, id_vector_src1).cpu()
+        print (img_id.shape)
         for i in range(img_id.shape[0]):
             if i == 0:
-                row1 = img_id[i]
-                row2 = img_att[i]
                 row3 = img_fake[i]
             else:
-                row1 = torch.cat([row1, img_id[i]], dim=2)
-                row2 = torch.cat([row2, img_att[i]], dim=2)
                 row3 = torch.cat([row3, img_fake[i]], dim=2)
 
-        #full = torch.cat([row1, row2, row3], dim=1).detach()
-        full = row3.detach()
-        full = full.permute(1, 2, 0)
+        output =row3.detach()
+        output = output * imagenet_std
+        output = output + imagenet_mean
+
+        full = output.permute(1, 2, 0)
         output = full.to('cpu')
         output = np.array(output)
         output = output[..., ::-1]
 
         output = output*255
 
-        cv2.imwrite(opt.output_path + 'result.jpg',output)
+        save = Image.fromarray(output)
+        save.save(opt.output_path + 'result.jpg',output)
 
 def main(opt):
-    torch.nn.Module.dump_patches = True
-    model = create_model(opt)
     #benchmark(model, "./crop_224/*.jpg")
-    test_one_image(opt)
+    test_from_train(opt)
 
 if __name__ == '__main__':
     opt = TestOptions().parse()
