@@ -1,4 +1,5 @@
 
+from cgi import test
 import cv2
 import torch
 import fractions
@@ -179,8 +180,9 @@ def test_one_image(opt):
 def main(opt):
     torch.nn.Module.dump_patches = True
     model = create_model(opt)
-    benchmark(model, "./crop_224/*.jpg")
-    
+    #benchmark(model, "./crop_224/*.jpg")
+    test_one_image(opt)
+
 if __name__ == '__main__':
     opt = TestOptions().parse()
 
