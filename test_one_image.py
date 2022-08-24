@@ -214,7 +214,7 @@ def test_one_image(opt):
     model.netG.eval()
 
     with torch.no_grad():
-        arcface_112     = F.interpolate(src_image1,size=(112,112))
+        arcface_112     = F.interpolate(src_image1,size=(112,112), mode='bicubic')
         id_vector_src1  = model.netArc(arcface_112)
         id_vector_src1  = F.normalize(id_vector_src1, p=2, dim=1)
 
