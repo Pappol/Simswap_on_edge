@@ -17,6 +17,7 @@ from PIL import Image
 from models.projected_model import fsModel
 from torchvision import transforms as T
 from data.data_loader_Swapping import GetLoader
+from util.plot import plot_batch
 
 import glob
 
@@ -183,72 +184,57 @@ def old_test_one_image(opt):
         cv2.imwrite(opt.output_path + 'result.jpg',output)
 
 def test_one_image(opt):
-    train_loader    = GetLoader('crop_224/vggface2_crop_arcfacealign_224/',opt.batchSize,8,1234)
-    src_image1, src_image2  = train_loader.next()
-    imagenet_std    = torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1)
-    imagenet_mean   = torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1)
-    model = create_model(opt)    
-    model.netG.eval()
+    imagenet_std    = torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1).cuda()
+    imagenet_mean   = torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1).cuda()
+    #inport and model data
+    c_transforms = []
+    
+    c_transforms.append(T.ToTensor())
+    c_transforms = T.Compose(c_transforms)
+
+    pic_a = opt.pic_a_path
+    img_a = c_transforms(Image.open(pic_a))
+    pic_b = opt.pic_b_path
+    img_b = c_transforms(Image.open(pic_b))
+
+    src_image1  = img_a.cuda(non_blocking=True)
+    src_image1  = src_image1.sub_(imagenet_mean).div_(imagenet_std)
+    src_image2  = img_b.cuda(non_blocking=True)
+    src_image2  = src_image2.sub_(imagenet_mean).div_(imagenet_std)
 
 
-    with torch.no_grad():
-        arcface_112     = F.interpolate(src_image2,size=(112,112), mode='bicubic')
-        id_vector_src1  = model.netArc(arcface_112)
-        id_vector_src1  = F.normalize(id_vector_src1, p=2, dim=1)
-        img_fake = model.netG(src_image1, id_vector_src1).cpu()
-        img_fake    = img_fake[0] * imagenet_std
-        img_fake    = img_fake + imagenet_mean
-        img_fake    = img_fake.numpy()
+    src_image1 = src_image1.view(-1, img_a.shape[0], img_a.shape[1], img_a.shape[2])
 
-        img_fake    = postprocess(img_fake)
-        Image.save(opt.output_path + 'result.jpg',img_fake)
-
-
-def test_from_train(opt):
-    train_loader    = GetLoader('crop_224/vggface2_crop_arcfacealign_224/',opt.batchSize,8,1234)
-    src_image1, src_image2  = train_loader.next()
-    imagenet_std    = torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1)
-    imagenet_mean   = torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1)
+    imagenet_std   = torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1)
+    imagenet_mean  = torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1)
 
     model = fsModel()
 
     model.initialize(opt)
     model.netG.eval()
 
-    pic_a = opt.pic_a_path
-    img_a = Image.open(pic_a).convert('RGB')
-    img_a = transformer_Arcface(img_a)
-    img_id = img_a.view(-1, img_a.shape[0], img_a.shape[1], img_a.shape[2])
-
     with torch.no_grad():
-        arcface_112     = F.interpolate(src_image2,size=(112,112), mode='bicubic')
+        arcface_112     = F.interpolate(src_image1,size=(112,112))
         id_vector_src1  = model.netArc(arcface_112)
         id_vector_src1  = F.normalize(id_vector_src1, p=2, dim=1)
-        img_fake = model.netG(src_image1, id_vector_src1).cpu()
-        print (img_id.shape)
-        for i in range(img_id.shape[0]):
-            if i == 0:
-                row3 = img_fake[i]
-            else:
-                row3 = torch.cat([row3, img_fake[i]], dim=2)
 
-        output =row3.detach()
-        output = output * imagenet_std
-        output = output + imagenet_mean
+        img_fake    = model.netG(src_image2, id_vector_src1).cpu()
+                    
+        img_fake    = img_fake * imagenet_std
+        img_fake    = img_fake + imagenet_mean
+        img_fake    = img_fake.numpy()
+        img_fake    = img_fake.transpose(0,2,3,1)
+        img_fake    = img_fake[0]
+        img_fake    = postprocess(img_fake)
+        img_fake    = img_fake*255
+        cv2.imwrite(opt.output_path + 'result.jpg',img_fake)
 
-        full = output.permute(1, 2, 0)
-        output = full.to('cpu')
-        output = np.array(output)
-        output = output[..., ::-1]
 
-        output = output*255
 
-        save = Image.fromarray(output)
-        save.save(opt.output_path + 'result.jpg',output)
 
 def main(opt):
     #benchmark(model, "./crop_224/*.jpg")
-    test_from_train(opt)
+    test_one_image(opt)
 
 if __name__ == '__main__':
     opt = TestOptions().parse()
