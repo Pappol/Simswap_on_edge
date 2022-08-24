@@ -217,7 +217,10 @@ def test_one_image(opt):
         arcface_112     = F.interpolate(src_image1,size=(112,112), mode='bicubic')
         id_vector_src1  = model.netArc(arcface_112)
         id_vector_src1  = F.normalize(id_vector_src1, p=2, dim=1)
+        src_image2 = src_image2.view(-1, img_b.shape[0], img_b.shape[1], img_b.shape[2])
 
+        print (id_vector_src1.shape)
+        print (src_image2.shape)
         img_fake    = model.netG(src_image2, id_vector_src1).cpu()
                     
         img_fake    = img_fake * imagenet_std
@@ -226,8 +229,8 @@ def test_one_image(opt):
         img_fake    = img_fake.transpose(0,2,3,1)
         img_fake    = img_fake[0]
         img_fake    = postprocess(img_fake)
-        img_fake    = img_fake*255
-        cv2.imwrite(opt.output_path + 'result.jpg',img_fake)
+        im = Image.fromarray(img_fake).convert('RGB')
+        im.save(opt.output_path + 'result.png')
 
 
 
